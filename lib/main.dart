@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,42 +12,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Wattage Wizard',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Wattage Wizard Home Page'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -55,71 +32,121 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  final _wattageKey = GlobalKey<FormState>();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  num _wattage = 0;
+  num _rebate = 0;
+
+  final wattageController = TextEditingController();
+  final rebateController = TextEditingController();
+
+  num _priceBeforeRebate = 0;
+  num _priceAfterRebate = 0;
+  String _formattedPriceAfterRebate = '';
+  String _formattedPriceBeforeRebate = '';
+
+
+  @override
+  void dispose() {
+    wattageController.dispose();
+    rebateController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
+        backgroundColor: Colors.amber,
+        //Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have clicked the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+        child: Form(
+          key: _wattageKey,
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                child: TextFormField(
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Wattage (kWh)',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+                  validator: (value){
+                    if(value == null || value.isEmpty){
+                      return 'Please enter the wattage';
+                    }
+                    // Check if the value is a valid number and not negative
+                    if (double.tryParse(value) == null || double.parse(value) < 0) {
+                      return 'Please enter a valid number';
+                    }
+                    return null;
+                  },
+                  controller: wattageController,
+                ),
+
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                child: TextFormField(
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Rebate (%)',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+                  validator: (value){
+                    // Check if the value is a valid number and not negative
+                    final inputValue = value?.isEmpty ?? true ? '0' : value!; // Provide a default value
+                    final parsedValue = double.tryParse(inputValue);
+                    if (parsedValue == null || parsedValue < 0) {
+                      return 'Please enter a valid number between 0 and 5';
+                    }
+                    if (parsedValue > 5) {
+                      return 'Rebate value can\'t be more than 5';
+                    }
+                    return null;
+                  },
+                  controller: rebateController,
+                ),
+              ),
+
+              ElevatedButton(
+                onPressed: () {
+                  if (_wattageKey.currentState!.validate()) {
+                    _wattage = double.parse(wattageController.text);
+                    _rebate = double.tryParse(rebateController.text) ?? 0;
+                    
+                    if (_wattage <= 200) {
+                      _priceBeforeRebate = _wattage * 0.218; // Rate for 1 - 200 kWh
+                    } else if (_wattage <= 300) {
+                      _priceBeforeRebate = 200 * 0.218 + (_wattage - 200) * 0.334; // Rate for 201 - 300 kWh
+                    } else if (_wattage <= 600) {
+                      _priceBeforeRebate = 200 * 0.218 + 100 * 0.334 + (_wattage - 300) * 0.516; // Rate for 301 - 600 kWh
+                    } else {
+                      _priceBeforeRebate = 200 * 0.218 + 100 * 0.334 + 300 * 0.516 + (_wattage - 600) * 0.546; // Rate for 601 kWh and above
+                    }
+
+                    _priceAfterRebate = _priceBeforeRebate * (1 - _rebate / 100);
+
+                    _formattedPriceAfterRebate = _priceAfterRebate.toStringAsFixed(2);
+                    _formattedPriceBeforeRebate = _priceBeforeRebate.toStringAsFixed(2);
+                    // Update the state to reflect the new price
+                    setState(() {});
+                  }
+                },
+                child: const Text('Submit'),
+              ),
+              Text('Price after rebate: RM$_formattedPriceAfterRebate'),
+              Text('Before rebate: RM$_formattedPriceBeforeRebate')
+            ],
+          ),
+        )
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
