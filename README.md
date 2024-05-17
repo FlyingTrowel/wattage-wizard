@@ -1,16 +1,9 @@
 # wattage_wizard
 
-Electricity bills calculator
+Wattage rates calculator
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Group: RCDCS251 5B
+Student number: 2023376281
+Programme code: CDCS251
+Information: Wattage rates calculator
+Copyright Statement: © 2024 Aieman Nur Hakim Roslan
